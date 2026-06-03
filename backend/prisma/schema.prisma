@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Student {
+  id            String   @id @default(uuid())
+  studentNumber String   @unique @map("student_number")
+  firstName     String   @map("first_name")
+  lastName      String   @map("last_name")
+  email         String   @unique
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  enrollments Enrollment[]
+
+  @@map("students")
+}
+
+model Teacher {
+  id             String   @id @default(uuid())
+  employeeNumber String   @unique @map("employee_number")
+  firstName      String   @map("first_name")
+  lastName       String   @map("last_name")
+  email          String   @unique
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  courses Course[]
+
+  @@map("teachers")
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  title       String
+  description String?
+  teacherId   String   @map("teacher_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  teacher     Teacher      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  enrollments Enrollment[]
+
+  @@index([teacherId])
+  @@map("courses")
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  studentId  String   @map("student_id")
+  courseId   String   @map("course_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  grade   Grade?
+
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+  @@map("enrollments")
+}
+
+model Grade {
+  id           String   @id @default(uuid())
+  enrollmentId String   @unique @map("enrollment_id")
+  grade        Float
+  remarks      String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@map("grades")
+}
