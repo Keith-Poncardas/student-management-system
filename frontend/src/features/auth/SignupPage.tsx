@@ -131,13 +131,13 @@ const SignupPage: React.FC = () => {
                 <MailIcon />
               </span>
               <input
-                id={emailId}
-                type="email"
+                id={nameId}
+                type="text"
                 required
-                autoComplete="email"
+                autoComplete="name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="you@school.edu"
+                placeholder="Name"
                 className="w-full rounded-lg border border-gray-300 py-2.5 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
