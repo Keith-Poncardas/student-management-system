@@ -3,7 +3,7 @@ import { setContext } from "@apollo/client/link/context";
 import { useAuthStore } from "../store/authStore";
 
 const httpLink = createHttpLink({
-  uri: "https://student-management-system-a37f.onrender.com/graphql",
+  uri: import.meta.env.VITE_GRAPHQL_URI || "http://localhost:4000/graphql",
 });
 
 const authLink = setContext((_, { headers }) => {

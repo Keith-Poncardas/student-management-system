@@ -1,48 +1,51 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import MainLayout from './layouts/MainLayout';
-import ProtectedRoute from './routes/ProtectedRoute';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import MainLayout from "./layouts/MainLayout";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 // Auth
-import LoginPage from './features/auth/LoginPage';
-import SignupPage from './features/auth/SignupPage';
+import LoginPage from "./features/auth/LoginPage";
+import SignupPage from "./features/auth/SignupPage";
 
 // Dashboard
-import DashboardPage from './pages/DashboardPage';
+import DashboardPage from "./pages/DashboardPage";
 
 // Students
-import StudentsListPage from './features/students/StudentsListPage';
-import CreateStudentPage from './features/students/CreateStudentPage';
-import EditStudentPage from './features/students/EditStudentPage';
-import StudentDetailPage from './features/students/StudentDetailPage';
+import StudentsListPage from "./features/students/StudentsListPage";
+import StudentFormPage from "./features/students/StudentFormPage";
+import StudentDetailPage from "./features/students/StudentDetailPage";
 
 // Teachers
-import TeachersListPage from './features/teachers/TeachersListPage';
-import CreateTeacherPage from './features/teachers/CreateTeacherPage';
-import EditTeacherPage from './features/teachers/EditTeacherPage';
-import TeacherDetailPage from './features/teachers/TeacherDetailPage';
+import TeachersListPage from "./features/teachers/TeachersListPage";
+import CreateTeacherPage from "./features/teachers/CreateTeacherPage";
+import EditTeacherPage from "./features/teachers/EditTeacherPage";
+import TeacherDetailPage from "./features/teachers/TeacherDetailPage";
 
 // Courses
-import CoursesListPage from './features/courses/CoursesListPage';
-import CreateCoursePage from './features/courses/CreateCoursePage';
-import EditCoursePage from './features/courses/EditCoursePage';
-import CourseDetailPage from './features/courses/CourseDetailPage';
+import CoursesListPage from "./features/courses/CoursesListPage";
+import CreateCoursePage from "./features/courses/CreateCoursePage";
+import EditCoursePage from "./features/courses/EditCoursePage";
+import CourseDetailPage from "./features/courses/CourseDetailPage";
 
 // Enrollments
-import EnrollmentsListPage from './features/enrollments/EnrollmentsListPage';
-import CreateEnrollmentPage from './features/enrollments/CreateEnrollmentPage';
+import EnrollmentsListPage from "./features/enrollments/EnrollmentsListPage";
+import CreateEnrollmentPage from "./features/enrollments/CreateEnrollmentPage";
 
 // Grades
-import GradesListPage from './features/grades/GradesListPage';
-import CreateGradePage from './features/grades/CreateGradePage';
-import EditGradePage from './features/grades/EditGradePage';
+import GradesListPage from "./features/grades/GradesListPage";
+import CreateGradePage from "./features/grades/CreateGradePage";
+import EditGradePage from "./features/grades/EditGradePage";
+import AuthLayout from "./layouts/AuthLayout";
 
 const App: React.FC = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
+
+      <Route element={<AuthLayout />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+      </Route>
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
@@ -51,9 +54,9 @@ const App: React.FC = () => {
 
           {/* Students */}
           <Route path="/students" element={<StudentsListPage />} />
-          <Route path="/students/create" element={<CreateStudentPage />} />
+          <Route path="/students/create" element={<StudentFormPage />} />
           <Route path="/students/:id" element={<StudentDetailPage />} />
-          <Route path="/students/:id/edit" element={<EditStudentPage />} />
+          <Route path="/students/:id/edit" element={<StudentFormPage />} />
 
           {/* Teachers */}
           <Route path="/teachers" element={<TeachersListPage />} />
@@ -69,7 +72,10 @@ const App: React.FC = () => {
 
           {/* Enrollments */}
           <Route path="/enrollments" element={<EnrollmentsListPage />} />
-          <Route path="/enrollments/create" element={<CreateEnrollmentPage />} />
+          <Route
+            path="/enrollments/create"
+            element={<CreateEnrollmentPage />}
+          />
 
           {/* Grades */}
           <Route path="/grades" element={<GradesListPage />} />

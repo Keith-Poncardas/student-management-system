@@ -1,17 +1,120 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
-import { Link, useNavigate } from 'react-router-dom';
-import { GET_STUDENTS, DELETE_STUDENT } from '../../graphql/operations';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import ErrorMessage from '../../components/ErrorMessage';
-import EmptyState from '../../components/EmptyState';
-import Pagination from '../../components/Pagination';
-import SearchBar from '../../components/SearchBar';
-import ConfirmModal from '../../components/ConfirmModal';
+import React, { useState } from "react";
+import { useQuery, useMutation } from "@apollo/client";
+import { Link, useNavigate } from "react-router-dom";
+import { GET_STUDENTS, DELETE_STUDENT } from "../../graphql/operations";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorMessage from "../../components/ErrorMessage";
+import EmptyState from "../../components/EmptyState";
+import Pagination from "../../components/Pagination";
+import SearchBar from "../../components/SearchBar";
+import ConfirmModal from "../../components/ConfirmModal";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Student {
+  id: string;
+  studentNumber: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+const PlusIcon = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+const EyeIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const EditIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6M14 11v6" />
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+  </svg>
+);
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getInitials(firstName: string, lastName: string): string {
+  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+}
+
+const AVATAR_COLORS = [
+  "bg-blue-500",
+  "bg-violet-500",
+  "bg-emerald-500",
+  "bg-orange-500",
+  "bg-pink-500",
+  "bg-cyan-500",
+];
+
+function avatarColor(index: number): string {
+  return AVATAR_COLORS[index % AVATAR_COLORS.length];
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const StudentsListPage: React.FC = () => {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -27,76 +130,159 @@ const StudentsListPage: React.FC = () => {
   });
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage message={error.message} onRetry={() => refetch()} />;
+  if (error)
+    return <ErrorMessage message={error.message} onRetry={() => refetch()} />;
 
   const students = data?.students;
+  const studentList: Student[] = students?.data ?? [];
+  const totalCount: number = students?.total ?? studentList.length;
 
   return (
-    <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Students</h1>
+    <div className="space-y-6">
+      {/* ── Page Header ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Students</h1>
+          <p className="mt-0.5 text-sm text-gray-500">
+            {totalCount > 0
+              ? `${totalCount.toLocaleString()} student${totalCount !== 1 ? "s" : ""} total`
+              : "Manage your student records"}
+          </p>
+        </div>
+
         <Link
           to="/students/create"
-          className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:self-start"
         >
-          + Add Student
+          <PlusIcon />
+          Add Student
         </Link>
       </div>
 
-      <div className="mb-4">
-        <SearchBar
-          value={search}
-          onChange={(v) => { setSearch(v); setPage(1); }}
-          placeholder="Search students..."
-        />
-      </div>
+      {/* ── Search & Table Panel ── */}
+      <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200/60">
+        {/* Toolbar */}
+        <div className="border-b border-gray-100 px-4 py-3 sm:px-5">
+          <SearchBar
+            value={search}
+            onChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
+            placeholder="Search by name, email or student number…"
+          />
+        </div>
 
-      <div className="overflow-hidden rounded-lg bg-white shadow-sm">
-        {students?.data?.length === 0 ? (
+        {/* Table or empty state */}
+        {studentList.length === 0 ? (
           <EmptyState
-            title="No students found"
-            description="Get started by adding your first student."
-            actionLabel="Add Student"
-            onAction={() => navigate('/students/create')}
+            title={
+              search ? "No students match your search" : "No students found"
+            }
+            description={
+              search
+                ? "Try adjusting your search terms."
+                : "Get started by adding your first student."
+            }
+            actionLabel={search ? undefined : "Add Student"}
+            onAction={search ? undefined : () => navigate("/students/create")}
           />
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b bg-gray-50 text-xs uppercase text-gray-500">
-                  <tr>
-                    <th className="px-4 py-3">Student #</th>
-                    <th className="px-4 py-3">Name</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Actions</th>
+              <table className="w-full min-w-[600px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/70">
+                    <th
+                      scope="col"
+                      className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400"
+                    >
+                      Student
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400"
+                    >
+                      Student #
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400"
+                    >
+                      Email
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400"
+                    >
+                      Actions
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {students?.data?.map((student: any) => (
-                    <tr key={student.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium">{student.studentNumber}</td>
-                      <td className="px-4 py-3">
-                        {student.firstName} {student.lastName}
+                <tbody className="divide-y divide-gray-50">
+                  {studentList.map((student, index) => (
+                    <tr
+                      key={student.id}
+                      className="group transition-colors duration-100 hover:bg-blue-50/40"
+                    >
+                      {/* Avatar + Name */}
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${avatarColor(index)}`}
+                            aria-hidden="true"
+                          >
+                            {getInitials(student.firstName, student.lastName)}
+                          </span>
+                          <span className="font-medium text-gray-900">
+                            {student.firstName} {student.lastName}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{student.email}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2">
+
+                      {/* Student Number */}
+                      <td className="px-5 py-3.5">
+                        <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-gray-200">
+                          {student.studentNumber}
+                        </span>
+                      </td>
+
+                      {/* Email */}
+                      <td className="px-5 py-3.5 text-gray-500">
+                        <a
+                          href={`mailto:${student.email}`}
+                          className="hover:text-blue-600 hover:underline focus-visible:outline-none focus-visible:underline"
+                        >
+                          {student.email}
+                        </a>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center justify-end gap-1">
                           <Link
                             to={`/students/${student.id}`}
-                            className="text-blue-600 hover:underline"
+                            aria-label={`View ${student.firstName} ${student.lastName}`}
+                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                           >
+                            <EyeIcon />
                             View
                           </Link>
                           <Link
                             to={`/students/${student.id}/edit`}
-                            className="text-green-600 hover:underline"
+                            aria-label={`Edit ${student.firstName} ${student.lastName}`}
+                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-emerald-50 hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                           >
+                            <EditIcon />
                             Edit
                           </Link>
                           <button
+                            type="button"
                             onClick={() => setDeleteId(student.id)}
-                            className="text-red-600 hover:underline"
+                            aria-label={`Delete ${student.firstName} ${student.lastName}`}
+                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                           >
+                            <TrashIcon />
                             Delete
                           </button>
                         </div>
@@ -106,6 +292,7 @@ const StudentsListPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
             <Pagination
               page={students?.page ?? 1}
               totalPages={students?.totalPages ?? 1}
@@ -115,11 +302,15 @@ const StudentsListPage: React.FC = () => {
         )}
       </div>
 
+      {/* ── Delete Confirmation Modal ── */}
       <ConfirmModal
         isOpen={!!deleteId}
         title="Delete Student"
-        message="Are you sure you want to delete this student? This action cannot be undone."
-        onConfirm={() => deleteId && deleteStudent({ variables: { id: deleteId } })}
+        message="Are you sure you want to delete this student? This action cannot be undone and will remove all associated records."
+        confirmLabel="Delete Student"
+        onConfirm={() =>
+          deleteId && deleteStudent({ variables: { id: deleteId } })
+        }
         onCancel={() => setDeleteId(null)}
         loading={deleting}
       />
