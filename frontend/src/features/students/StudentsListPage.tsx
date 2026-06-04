@@ -4,10 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { GET_STUDENTS, DELETE_STUDENT } from "../../graphql/operations";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
-import EmptyState from "../../components/EmptyState";
-import Pagination from "../../components/Pagination";
-import SearchBar from "../../components/SearchBar";
 import ConfirmModal from "../../components/ConfirmModal";
+import DataTable, { Column } from "../../components/DataTable";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -110,6 +108,85 @@ function avatarColor(index: number): string {
   return AVATAR_COLORS[index % AVATAR_COLORS.length];
 }
 
+// ─── Column Definitions ──────────────────────────────────────────────────────
+
+const useStudentColumns = (
+  setDeleteId: (id: string) => void
+): Column<Student>[] => [
+  {
+    key: "student",
+    header: "Student",
+    render: (student, index) => (
+      <div className="flex items-center gap-3">
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${avatarColor(index)}`}
+          aria-hidden="true"
+        >
+          {getInitials(student.firstName, student.lastName)}
+        </span>
+        <span className="font-medium text-gray-900">
+          {student.firstName} {student.lastName}
+        </span>
+      </div>
+    ),
+  },
+  {
+    key: "studentNumber",
+    header: "Student #",
+    render: (student) => (
+      <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-gray-200">
+        {student.studentNumber}
+      </span>
+    ),
+  },
+  {
+    key: "email",
+    header: "Email",
+    render: (student) => (
+      <a
+        href={`mailto:${student.email}`}
+        className="text-gray-500 hover:text-blue-600 hover:underline focus-visible:outline-none focus-visible:underline"
+      >
+        {student.email}
+      </a>
+    ),
+  },
+  {
+    key: "actions",
+    header: "Actions",
+    alignRight: true,
+    render: (student) => (
+      <div className="flex items-center justify-end gap-1">
+        <Link
+          to={`/students/${student.id}`}
+          aria-label={`View ${student.firstName} ${student.lastName}`}
+          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          <EyeIcon />
+          View
+        </Link>
+        <Link
+          to={`/students/${student.id}/edit`}
+          aria-label={`Edit ${student.firstName} ${student.lastName}`}
+          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-emerald-50 hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+        >
+          <EditIcon />
+          Edit
+        </Link>
+        <button
+          type="button"
+          onClick={() => setDeleteId(student.id)}
+          aria-label={`Delete ${student.firstName} ${student.lastName}`}
+          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+        >
+          <TrashIcon />
+          Delete
+        </button>
+      </div>
+    ),
+  },
+];
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const StudentsListPage: React.FC = () => {
@@ -137,6 +214,8 @@ const StudentsListPage: React.FC = () => {
   const studentList: Student[] = students?.data ?? [];
   const totalCount: number = students?.total ?? studentList.length;
 
+  const columns = useStudentColumns(setDeleteId);
+
   return (
     <div className="space-y-6">
       {/* ── Page Header ── */}
@@ -159,148 +238,27 @@ const StudentsListPage: React.FC = () => {
         </Link>
       </div>
 
-      {/* ── Search & Table Panel ── */}
-      <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200/60">
-        {/* Toolbar */}
-        <div className="border-b border-gray-100 px-4 py-3 sm:px-5">
-          <SearchBar
-            value={search}
-            onChange={(v) => {
-              setSearch(v);
-              setPage(1);
-            }}
-            placeholder="Search by name, email or student number…"
-          />
-        </div>
-
-        {/* Table or empty state */}
-        {studentList.length === 0 ? (
-          <EmptyState
-            title={
-              search ? "No students match your search" : "No students found"
-            }
-            description={
-              search
-                ? "Try adjusting your search terms."
-                : "Get started by adding your first student."
-            }
-            actionLabel={search ? undefined : "Add Student"}
-            onAction={search ? undefined : () => navigate("/students/create")}
-          />
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/70">
-                    <th
-                      scope="col"
-                      className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400"
-                    >
-                      Student
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400"
-                    >
-                      Student #
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400"
-                    >
-                      Email
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400"
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {studentList.map((student, index) => (
-                    <tr
-                      key={student.id}
-                      className="group transition-colors duration-100 hover:bg-blue-50/40"
-                    >
-                      {/* Avatar + Name */}
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${avatarColor(index)}`}
-                            aria-hidden="true"
-                          >
-                            {getInitials(student.firstName, student.lastName)}
-                          </span>
-                          <span className="font-medium text-gray-900">
-                            {student.firstName} {student.lastName}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Student Number */}
-                      <td className="px-5 py-3.5">
-                        <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-gray-200">
-                          {student.studentNumber}
-                        </span>
-                      </td>
-
-                      {/* Email */}
-                      <td className="px-5 py-3.5 text-gray-500">
-                        <a
-                          href={`mailto:${student.email}`}
-                          className="hover:text-blue-600 hover:underline focus-visible:outline-none focus-visible:underline"
-                        >
-                          {student.email}
-                        </a>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center justify-end gap-1">
-                          <Link
-                            to={`/students/${student.id}`}
-                            aria-label={`View ${student.firstName} ${student.lastName}`}
-                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                          >
-                            <EyeIcon />
-                            View
-                          </Link>
-                          <Link
-                            to={`/students/${student.id}/edit`}
-                            aria-label={`Edit ${student.firstName} ${student.lastName}`}
-                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-emerald-50 hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                          >
-                            <EditIcon />
-                            Edit
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteId(student.id)}
-                            aria-label={`Delete ${student.firstName} ${student.lastName}`}
-                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                          >
-                            <TrashIcon />
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <Pagination
-              page={students?.page ?? 1}
-              totalPages={students?.totalPages ?? 1}
-              onPageChange={setPage}
-            />
-          </>
-        )}
-      </div>
+      {/* ── Data Table ── */}
+      <DataTable<Student>
+        data={studentList}
+        columns={columns}
+        rowKey={(s) => s.id}
+        pagination={{
+          page: students?.page ?? 1,
+          totalPages: students?.totalPages ?? 1,
+          total: totalCount,
+        }}
+        onPageChange={setPage}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by name, email or student number…"
+        emptyTitle="No students found"
+        emptyDescription="Get started by adding your first student."
+        emptyActionLabel="Add Student"
+        onEmptyAction={() => navigate("/students/create")}
+        emptySearchTitle="No students match your search"
+        emptySearchDescription="Try adjusting your search terms."
+      />
 
       {/* ── Delete Confirmation Modal ── */}
       <ConfirmModal
